@@ -1,4 +1,4 @@
-package sd1.sd1;
+package SD_PhaseKing.SD_PhaseKing;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

@@ -1,4 +1,4 @@
-package sd1.sd1;
+package SD_PhaseKing.SD_PhaseKing;
 
 /**
  * Hello world!

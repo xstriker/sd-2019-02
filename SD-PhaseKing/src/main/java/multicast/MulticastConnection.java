@@ -19,8 +19,8 @@ class MulticastConnection extends Thread {
 
 	public void run() {
 		try {
-			while(true) {
-				if(!connSocket.isClosed()) {
+			while (true) {
+				if (!connSocket.isClosed()) {
 					buffer = new byte[1000];
 					messageIn = new DatagramPacket(buffer, buffer.length);
 					connSocket.receive(messageIn);

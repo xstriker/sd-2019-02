@@ -11,10 +11,10 @@ public class MulticastMessage {
 	private String type;
 
 	public MulticastMessage(JSONObject json) {
-		this.id = json.getLong("id");
-		this.message = json.getString("message");
-		this.imKing = json.getBoolean("imKing");
-		this.type = json.getString("type");
+		this.id = json.getLong(MulticastMessageFields.ID.getField());
+		this.message = json.getString(MulticastMessageFields.MESSAGE.getField());
+		this.imKing = json.getBoolean(MulticastMessageFields.IMKING.getField());
+		this.type = json.getString(MulticastMessageFields.TYPE.getField());
 		this.json = json;
 	}
 

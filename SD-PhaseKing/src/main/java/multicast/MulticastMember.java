@@ -45,7 +45,8 @@ public class MulticastMember {
 	}
 
 	private void generateKey() throws NoSuchAlgorithmException, InvalidKeyException {
-		Signature.getInstance(this.generateRandomString());
+		this.publicKey = this.generateRandomString();
+		Signature.getInstance(this.publicKey);
 		SecureRandom secureRandom = new SecureRandom();
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
 		KeyPair keyPair = keyPairGenerator.generateKeyPair();
@@ -55,14 +56,13 @@ public class MulticastMember {
 	private String generateRandomString() {
 		byte[] array = new byte[7]; // length is bounded by 7
 		new Random().nextBytes(array);
-		this.publicKey = new String(array, Charset.forName("UTF-8"));
-		return this.publicKey;
+		return new String(array, Charset.forName("UTF-8"));
 	}
 
-	public void joinGroup() {
+	private void joinGroup() {
 		try {
 			this.group = InetAddress.getByName(this.connIp);
-			this.socket = new MulticastSocket(6789);
+			this.socket = new MulticastSocket(this.groupId);
 			this.socket.joinGroup(this.group);
 			this.inGroup = true;
 			this.sendMessage(this.publicKey, MulticastMessageType.KEY.getType());
@@ -73,12 +73,12 @@ public class MulticastMember {
 		}
 	}
 
-	public void startReceive() {
+	private void startReceive() {
 		@SuppressWarnings("unused")
 		MulticastConnection conn = new MulticastConnection(this.socket, this.id);
 	}
 
-	public void startSend() throws InterruptedException {
+	private void startSend() throws InterruptedException {
 		while (this.inGroup) {
 			this.sendMessage(this.getMessage(), MulticastMessageType.MESSAGE.getType());
 			TimeUnit.SECONDS.sleep(3);
@@ -86,7 +86,7 @@ public class MulticastMember {
 		this.socket.close();
 	}
 
-	public void sendMessage(String msg, String type) {
+	private void sendMessage(String msg, String type) {
 		try {
 			if (msg.equals(exitMessage)) {
 				this.socket.leaveGroup(this.group);
@@ -108,7 +108,7 @@ public class MulticastMember {
 		JSONObject json = new JSONObject();
 		json = this.setJsonValues(msg, type);
 		this.bufferOut = json.toString().getBytes();
-		return new DatagramPacket(this.bufferOut, this.bufferOut.length, group, 6789);
+		return new DatagramPacket(this.bufferOut, this.bufferOut.length, this.group, this.groupId);
 	}
 	
 	private JSONObject setJsonValues(String msg, String type) {

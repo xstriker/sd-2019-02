@@ -12,6 +12,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,15 @@ public class MulticastMember {
 	private String exitMessage;
 	private Signature signature;
 	private String publicKey;
+	private byte[] bufferIn;
+	private MulticastMessage message;
+	private HashMap<Long, String> keyMap;
+	private HashMap<Long, String> msgMap;
+	private Integer vValue;
+	private Integer nOfMembers;
+	private Integer fValue;
+	private Integer majority;
+	private Integer mult;
 
 	public MulticastMember(Long id) throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException {
 		this.id = id;
@@ -38,6 +48,11 @@ public class MulticastMember {
 		this.groupId = 6789;
 		this.exitMessage = "Exit Group";
 		this.sc = new Scanner(System.in);
+		this.vValue = new Random().nextInt(1);
+		this.nOfMembers = 5;
+		this.fValue = (int) Math.ceil(this.nOfMembers/4);
+		this.majority = 0;
+		this.mult = 0;
 		this.generateKey();
 		this.joinGroup();
 		this.startReceive();
@@ -75,12 +90,12 @@ public class MulticastMember {
 
 	private void startReceive() {
 		@SuppressWarnings("unused")
-		MulticastConnection conn = new MulticastConnection(this.socket, this.id);
+		MulticastConnection conn = new MulticastConnection(this);
 	}
 
 	private void startSend() throws InterruptedException {
 		while (this.inGroup) {
-			this.sendMessage(this.getMessage(), MulticastMessageType.MESSAGE.getType());
+			this.sendMessage(this.getEntryMessage(), MulticastMessageType.MESSAGE.getType());
 			TimeUnit.SECONDS.sleep(3);
 		}
 		this.socket.close();
@@ -91,7 +106,6 @@ public class MulticastMember {
 			if (msg.equals(exitMessage)) {
 				this.socket.leaveGroup(this.group);
 				this.inGroup = false;
-				System.out.println(this.id + " exited group: " + this.groupId);
 			} else {
 				socket.send(this.makeMessage(msg, type));
 			}
@@ -120,9 +134,62 @@ public class MulticastMember {
 		return json;
 	}
 
-	private String getMessage() {
+	private String getEntryMessage() {
 		System.out.println("Insira a mensagem: ");
 		return sc.nextLine();
+	}
+	
+	public void receiveMessage() {
+		try {
+			this.bufferIn = new byte[1000];
+			DatagramPacket messageIn = new DatagramPacket(bufferIn, bufferIn.length);
+			this.getSocket().receive(messageIn);
+			this.processDatagram(messageIn);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void processDatagram(DatagramPacket datagram) {
+		String data = new String(datagram.getData());
+		this.message = new MulticastMessage(new JSONObject(data));
+		handleMessage();
+	}
+	
+	private void handleMessage() {
+		if(this.message.getType().equals(MulticastMessageType.KEY.getType())) {
+			this.getNewKeyMessage();
+		} else {
+			this.getNewValueMessage();
+		}
+	}
+	
+	private void getNewKeyMessage() {
+		if(!this.keyMap.containsKey(this.message.getId())) {
+			this.keyMap.put(this.message.getId(), this.message.getMessage());
+			this.sendMessage(this.publicKey, MulticastMessageType.KEY.getType());
+		} else {
+			this.getNewValueMessage();
+		}
+	}
+	
+	private void getNewValueMessage() {
+		this.msgMap.put(this.message.getId(), this.message.getMessage());
+	}
+	
+	private void phaseKing() {
+		for(int phase = 1; phase < this.fValue+1; phase++) {
+			this.waitValues();
+			
+		}
+	}
+	
+	private void waitValues() {
+		while(this.msgMap.keySet().size() != this.getKeyMap().keySet().size());
+	}
+	
+	private Integer countMajority() {
+		
 	}
 
 	public Long getId() {
@@ -211,5 +278,25 @@ public class MulticastMember {
 
 	public void setPublicKey(String publicKey) {
 		this.publicKey = publicKey;
+	}
+
+	public byte[] getBufferIn() {
+		return bufferIn;
+	}
+
+	public void setBufferIn(byte[] bufferIn) {
+		this.bufferIn = bufferIn;
+	}
+
+	public HashMap<Long, String> getKeyMap() {
+		return keyMap;
+	}
+
+	public void setKeyMap(HashMap<Long, String> keyMap) {
+		this.keyMap = keyMap;
+	}
+
+	public void setMessage(MulticastMessage message) {
+		this.message = message;
 	}
 }

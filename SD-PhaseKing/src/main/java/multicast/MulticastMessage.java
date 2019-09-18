@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 public class MulticastMessage {
 
-	JSONObject json;
+	private JSONObject json;
 	private Long id;
 	private String message;
 	private Boolean imKing;

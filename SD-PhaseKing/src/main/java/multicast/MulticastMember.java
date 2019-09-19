@@ -12,6 +12,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
@@ -35,7 +36,7 @@ public class MulticastMember {
 	private byte[] bufferIn;
 	private MulticastMessage message;
 	private HashMap<Long, String> keyMap;
-	private HashMap<Long, String> msgMap;
+	private HashMap<Long, Integer> msgMap;
 	private Integer vValue;
 	private Integer nOfMembers;
 	private Integer fValue;
@@ -168,19 +169,48 @@ public class MulticastMember {
 		if(!this.keyMap.containsKey(this.message.getId())) {
 			this.keyMap.put(this.message.getId(), this.message.getMessage());
 			this.sendMessage(this.publicKey, MulticastMessageType.KEY.getType());
+			if(this.keyMap.keySet().size() == 5) {
+				this.phaseKing();
+			}
 		} else {
 			this.getNewValueMessage();
 		}
 	}
 	
 	private void getNewValueMessage() {
-		this.msgMap.put(this.message.getId(), this.message.getMessage());
+		try {
+			Integer value = Integer.parseInt(this.message.getMessage());
+			this.msgMap.put(this.message.getId(), value);
+		} catch (Exception e) {
+			System.out.println("Valor não numérico. Mensagem ignorada");
+		}
 	}
 	
 	private void phaseKing() {
 		for(int phase = 1; phase < this.fValue+1; phase++) {
-			this.waitValues();
-			
+			this.round1();
+			this.round2(phase);
+		}
+	}
+	
+	private void round1() {
+		this.waitValues();
+		this.countMajority();
+	}
+	
+	private void round2(Integer phase) {
+		if(phase.longValue() == this.id) {
+			this.sendMessage(this.majority.toString(), MulticastMessageType.MESSAGE.getType());
+		}
+		try {
+			TimeUnit.SECONDS.sleep(3);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		Integer tieBreaker = this.msgMap.get(phase.longValue());
+		this.vValue = this.mult > (this.nOfMembers/2 + this.fValue) ? this.majority : tieBreaker;
+		if(phase == this.fValue + 1) {
+			System.out.println("Consense value: " + vValue);
 		}
 	}
 	
@@ -188,8 +218,11 @@ public class MulticastMember {
 		while(this.msgMap.keySet().size() != this.getKeyMap().keySet().size());
 	}
 	
-	private Integer countMajority() {
-		
+	private void countMajority() {
+		Integer count0 = Collections.frequency(this.msgMap.values(), 0);
+		Integer count1 = Collections.frequency(this.msgMap.values(), 1);
+		this.majority = count0 > count1 ? 0 : 1;
+		this.mult = count0 > count1 ? count0 : count1;
 	}
 
 	public Long getId() {

@@ -15,6 +15,7 @@ public class MulticastMessage {
 		this.message = json.getString(MulticastMessageFields.MESSAGE.getField());
 		this.imKing = json.getBoolean(MulticastMessageFields.IMKING.getField());
 		this.type = json.getString(MulticastMessageFields.TYPE.getField());
+		this.message.getBytes();
 		this.json = json;
 	}
 

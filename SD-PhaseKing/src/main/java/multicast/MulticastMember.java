@@ -1,6 +1,7 @@
 package multicast;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -19,6 +20,8 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONObject;
+
+import randonString.RandomString;
 
 public class MulticastMember {
 
@@ -42,6 +45,7 @@ public class MulticastMember {
 	private Integer fValue;
 	private Integer majority;
 	private Integer mult;
+	private Boolean kingMessage;
 
 	public MulticastMember(Long id) throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException {
 		this.id = id;
@@ -51,9 +55,12 @@ public class MulticastMember {
 		this.sc = new Scanner(System.in);
 		this.vValue = new Random().nextInt(1);
 		this.nOfMembers = 5;
-		this.fValue = (int) Math.ceil(this.nOfMembers/4);
+		this.fValue = 1;
 		this.majority = 0;
 		this.mult = 0;
+		this.kingMessage = false;
+		this.keyMap = new HashMap<Long, String>();
+		this.msgMap = new HashMap<Long, Integer>();
 		this.generateKey();
 		this.joinGroup();
 		this.startReceive();
@@ -61,18 +68,13 @@ public class MulticastMember {
 	}
 
 	private void generateKey() throws NoSuchAlgorithmException, InvalidKeyException {
-		this.publicKey = this.generateRandomString();
-		Signature.getInstance(this.publicKey);
-		SecureRandom secureRandom = new SecureRandom();
-		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
-		KeyPair keyPair = keyPairGenerator.generateKeyPair();
-		this.signature.initSign(keyPair.getPrivate(), secureRandom);
-	}
-	
-	private String generateRandomString() {
-		byte[] array = new byte[7]; // length is bounded by 7
-		new Random().nextBytes(array);
-		return new String(array, Charset.forName("UTF-8"));
+		this.publicKey = RandomString.generate(10);
+		this.keyMap.put(this.id, this.publicKey);
+//		Signature.getInstance(this.publicKey);
+//		SecureRandom secureRandom = new SecureRandom();
+//		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
+//		KeyPair keyPair = keyPairGenerator.generateKeyPair();
+//		this.signature.initSign(keyPair.getPrivate(), secureRandom);
 	}
 
 	private void joinGroup() {
@@ -81,7 +83,7 @@ public class MulticastMember {
 			this.socket = new MulticastSocket(this.groupId);
 			this.socket.joinGroup(this.group);
 			this.inGroup = true;
-			this.sendMessage(this.publicKey, MulticastMessageType.KEY.getType());
+			this.sendMessage(this.publicKey, MulticastMessageType.KEY.getType(), false);
 		} catch (SocketException e) {
 			System.out.println("Socket: " + e.getMessage());
 		} catch (IOException e) {
@@ -95,20 +97,22 @@ public class MulticastMember {
 	}
 
 	private void startSend() throws InterruptedException {
+		this.waitValues(0);
 		while (this.inGroup) {
-			this.sendMessage(this.getEntryMessage(), MulticastMessageType.MESSAGE.getType());
+			this.sendMessage(this.getEntryMessage(), MulticastMessageType.MESSAGE.getType(), false);
 			TimeUnit.SECONDS.sleep(3);
 		}
 		this.socket.close();
 	}
 
-	private void sendMessage(String msg, String type) {
+	private void sendMessage(String msg, String type, Boolean imKing) {
 		try {
 			if (msg.equals(exitMessage)) {
 				this.socket.leaveGroup(this.group);
 				this.inGroup = false;
 			} else {
-				socket.send(this.makeMessage(msg, type));
+				System.out.println(this.id + "sending +++++++++++++++++++++++");
+				socket.send(this.makeMessage(msg, type, imKing));
 			}
 		} catch (SocketException e) {
 			System.out.println("Socket: " + e.getMessage());
@@ -119,18 +123,23 @@ public class MulticastMember {
 		}
 	}
 
-	private DatagramPacket makeMessage(String msg, String type) {
-		JSONObject json = new JSONObject();
-		json = this.setJsonValues(msg, type);
-		this.bufferOut = json.toString().getBytes();
-		return new DatagramPacket(this.bufferOut, this.bufferOut.length, this.group, this.groupId);
+	private DatagramPacket makeMessage(String msg, String type, Boolean imKing) {
+		try {
+			JSONObject json = new JSONObject();
+			json = this.setJsonValues(msg, type, imKing);
+			this.bufferOut = json.toString().getBytes("utf-8");
+			return new DatagramPacket(this.bufferOut, this.bufferOut.length, this.group, this.groupId);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
-	private JSONObject setJsonValues(String msg, String type) {
+	private JSONObject setJsonValues(String msg, String type, Boolean imKing) {
 		JSONObject json = new JSONObject();
 		json.put(MulticastMessageFields.ID.getField(), this.id);
 		json.put(MulticastMessageFields.MESSAGE.getField(), msg);
-		json.put(MulticastMessageFields.IMKING.getField(), "");
+		json.put(MulticastMessageFields.IMKING.getField(), imKing);
 		json.put(MulticastMessageFields.TYPE.getField(), type);
 		return json;
 	}
@@ -151,13 +160,22 @@ public class MulticastMember {
 		}
 	}
 	
+	public void printReceivedMessage() {
+		System.out.println("------------------- INIT ------------------------- \n"
+				+ 		   "Received message from: " + this.message.getId() + "\n"
+						+  "Message Type: " + this.message.getType()		+ "\n"
+						+  "Message: " + this.message.getMessage()			+ "\n"
+						+  "---------------------END------------------------");
+	}
+	
 	private void processDatagram(DatagramPacket datagram) {
 		String data = new String(datagram.getData());
 		this.message = new MulticastMessage(new JSONObject(data));
-		handleMessage();
+		this.handleMessage();
 	}
 	
 	private void handleMessage() {
+		this.printReceivedMessage();
 		if(this.message.getType().equals(MulticastMessageType.KEY.getType())) {
 			this.getNewKeyMessage();
 		} else {
@@ -168,12 +186,8 @@ public class MulticastMember {
 	private void getNewKeyMessage() {
 		if(!this.keyMap.containsKey(this.message.getId())) {
 			this.keyMap.put(this.message.getId(), this.message.getMessage());
-			this.sendMessage(this.publicKey, MulticastMessageType.KEY.getType());
-			if(this.keyMap.keySet().size() == 5) {
-				this.phaseKing();
-			}
-		} else {
-			this.getNewValueMessage();
+			System.out.println("New member: " + this.id + " sending the public key");
+			this.sendMessage(this.publicKey, MulticastMessageType.KEY.getType(), false);
 		}
 	}
 	
@@ -181,48 +195,59 @@ public class MulticastMember {
 		try {
 			Integer value = Integer.parseInt(this.message.getMessage());
 			this.msgMap.put(this.message.getId(), value);
+			if(this.message.getImKing()) {
+				this.kingMessage = true;
+			}
 		} catch (Exception e) {
 			System.out.println("Valor não numérico. Mensagem ignorada");
 		}
 	}
 	
 	private void phaseKing() {
-		for(int phase = 1; phase < this.fValue+1; phase++) {
+		for(int phase = 1; phase <= this.fValue+1; phase++) {
 			this.round1();
 			this.round2(phase);
 		}
 	}
 	
 	private void round1() {
-		this.waitValues();
+		this.waitValues(1);
 		this.countMajority();
 	}
 	
 	private void round2(Integer phase) {
 		if(phase.longValue() == this.id) {
-			this.sendMessage(this.majority.toString(), MulticastMessageType.MESSAGE.getType());
+			this.sendMessage(this.majority.toString(), MulticastMessageType.MESSAGE.getType(), true);
 		}
-		try {
-			TimeUnit.SECONDS.sleep(3);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		this.waitValues(2);
 		Integer tieBreaker = this.msgMap.get(phase.longValue());
 		this.vValue = this.mult > (this.nOfMembers/2 + this.fValue) ? this.majority : tieBreaker;
+		this.kingMessage = false;
 		if(phase == this.fValue + 1) {
 			System.out.println("Consense value: " + vValue);
 		}
 	}
 	
-	private void waitValues() {
-		while(this.msgMap.keySet().size() != this.getKeyMap().keySet().size());
+	private void waitValues(Integer round) {
+		// Each case is a round number
+		switch (round) {
+			case 0:
+				while(this.keyMap.keySet().size() != 5);
+				break;
+			case 1:
+				while(this.msgMap.keySet().size() != this.getKeyMap().keySet().size());
+				break;
+			case 2:
+				while(!this.kingMessage);
+				break;
+		}
 	}
 	
 	private void countMajority() {
 		Integer count0 = Collections.frequency(this.msgMap.values(), 0);
 		Integer count1 = Collections.frequency(this.msgMap.values(), 1);
 		this.majority = count0 > count1 ? 0 : 1;
-		this.mult = count0 > count1 ? count0 : count1;
+		this.mult = this.majority == 0 ? count0 : count1;
 	}
 
 	public Long getId() {

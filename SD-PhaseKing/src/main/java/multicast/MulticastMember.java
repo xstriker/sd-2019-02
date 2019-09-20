@@ -97,12 +97,10 @@ public class MulticastMember {
 	}
 
 	private void startSend() throws InterruptedException {
-		this.waitValues(0);
 		while (this.inGroup) {
 			this.sendMessage(this.getEntryMessage(), MulticastMessageType.MESSAGE.getType(), false);
 			TimeUnit.SECONDS.sleep(3);
 		}
-		this.socket.close();
 	}
 
 	private void sendMessage(String msg, String type, Boolean imKing) {
@@ -111,7 +109,6 @@ public class MulticastMember {
 				this.socket.leaveGroup(this.group);
 				this.inGroup = false;
 			} else {
-				System.out.println(this.id + "sending +++++++++++++++++++++++");
 				socket.send(this.makeMessage(msg, type, imKing));
 			}
 		} catch (SocketException e) {
@@ -195,6 +192,9 @@ public class MulticastMember {
 		try {
 			Integer value = Integer.parseInt(this.message.getMessage());
 			this.msgMap.put(this.message.getId(), value);
+			if(this.msgMap.keySet().size() == 5) {
+				this.phaseKing();
+			}
 			if(this.message.getImKing()) {
 				this.kingMessage = true;
 			}
@@ -211,7 +211,6 @@ public class MulticastMember {
 	}
 	
 	private void round1() {
-		this.waitValues(1);
 		this.countMajority();
 	}
 	
@@ -219,12 +218,18 @@ public class MulticastMember {
 		if(phase.longValue() == this.id) {
 			this.sendMessage(this.majority.toString(), MulticastMessageType.MESSAGE.getType(), true);
 		}
-		this.waitValues(2);
+		try {
+			TimeUnit.SECONDS.sleep(3);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		Integer tieBreaker = this.msgMap.get(phase.longValue());
 		this.vValue = this.mult > (this.nOfMembers/2 + this.fValue) ? this.majority : tieBreaker;
 		this.kingMessage = false;
 		if(phase == this.fValue + 1) {
 			System.out.println("Consense value: " + vValue);
+			System.exit(0);
 		}
 	}
 	

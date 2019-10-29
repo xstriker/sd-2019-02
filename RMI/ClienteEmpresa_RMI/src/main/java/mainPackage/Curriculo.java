@@ -1,25 +1,33 @@
-package server;
+package mainPackage;
 
-public class Vaga {
+public class Curriculo {
 
-	private String nomeEmpresa;
+	private String nome;
+	private String contato;
 	private String area;
 	private Double tempo;
 	private Double salario;
 	
-	public Vaga(String nomeEmpresa, String area, Double tempo, Double salario) {
+	public Curriculo(String nome, String contato, String area, Double tempo, Double salario) {
 		super();
-		this.nomeEmpresa = nomeEmpresa;
+		this.nome = nome;
+		this.contato = contato;
 		this.area = area;
 		this.tempo = tempo;
 		this.salario = salario;
 	}
 
-	public String getNomeEmpresa() {
-		return nomeEmpresa;
+	public String getNome() {
+		return nome;
 	}
-	public void setNomeEmpresa(String nomeEmpresa) {
-		this.nomeEmpresa = nomeEmpresa;
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+	public String getContato() {
+		return contato;
+	}
+	public void setContato(String contato) {
+		this.contato = contato;
 	}
 	public String getArea() {
 		return area;
@@ -39,5 +47,4 @@ public class Vaga {
 	public void setSalario(Double salario) {
 		this.salario = salario;
 	}
-	
 }

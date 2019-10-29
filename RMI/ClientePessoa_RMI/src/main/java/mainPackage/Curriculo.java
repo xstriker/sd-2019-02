@@ -1,4 +1,4 @@
-package server;
+package mainPackage;
 
 public class Curriculo {
 

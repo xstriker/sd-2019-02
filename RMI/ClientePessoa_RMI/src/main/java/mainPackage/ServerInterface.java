@@ -1,18 +1,20 @@
 package mainPackage;
 
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.util.List;
 
-public interface ServerInterface {
+public interface ServerInterface extends Remote {
 
-	public List<Curriculo> buscarCurriculos(String area);
+	public List<Curriculo> buscarCurriculos(String area) throws RemoteException;
 	
-	public List<Vaga> buscarVagas(String area, Double salarioMinimo);
+	public List<Vaga> buscarVagas(String area, Double salarioMinimo) throws RemoteException;
 	
-	public void cadastrarCurriculo(Curriculo curriculo);
+	public void cadastrarCurriculo(Curriculo curriculo) throws RemoteException;
 	
-	public void cadastrarVaga(Vaga vaga);
+	public void cadastrarVaga(Vaga vaga) throws RemoteException;
 	
-	public void cadastrarInteresseCurriculo(String area, ClientePessoa cli);
+	public void cadastrarInteresseCurriculo(String area, ClienteEmpresaInterface cli) throws RemoteException;
 	
-	public void cadastrarInteresseVaga(String area, ClienteEmpresa cli);
+	public void cadastrarInteresseVaga(String area, ClientePessoaInterface cli) throws RemoteException;
 }

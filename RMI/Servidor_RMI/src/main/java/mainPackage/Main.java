@@ -10,7 +10,7 @@ public class Main {
 		try {
 			Registry referenciaServicoNomes = LocateRegistry.createRegistry(9999);
 			Server instance = new Server();
-			referenciaServicoNomes.rebind("InterfaceServ", instance);
+			referenciaServicoNomes.rebind("ServerInterface", instance);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}

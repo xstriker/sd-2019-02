@@ -19,10 +19,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface{
 		// TODO Auto-generated constructor stub
 	}
 
-	private Map<String, Map<String, Curriculo>> mapCurriculos;
-	private Map<String, Map<String, Vaga>> mapVagas;
-	private Map<String, List<ClientePessoa>> registrosVagas;
-	private Map<String, List<ClienteEmpresa>> registrosCurriculo;
+	private Map<String, Map<String, Curriculo>> mapCurriculos = new HashMap<String, Map<String,Curriculo>>();
+	private Map<String, Map<String, Vaga>> mapVagas = new HashMap<String, Map<String,Vaga>>();
+	private Map<String, List<ClientePessoaInterface>> registrosVagas = new HashMap<String, List<ClientePessoaInterface>>();
+	private Map<String, List<ClienteEmpresaInterface>> registrosCurriculo = new HashMap<String, List<ClienteEmpresaInterface>>();
 	
 	public List<Curriculo> buscarCurriculos(String area) {
 		List<Curriculo> returnList = new ArrayList<Curriculo>();
@@ -48,6 +48,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface{
 			mapCurriculos.put(curriculo.getArea(), new HashMap<String, Curriculo>());
 		}
 		mapCurriculos.get(curriculo.getArea()).put(curriculo.getContato(), curriculo);
+		System.out.println("Curriculo Cadastrado");
 		notificarClientesEmpresa(curriculo, curriculo.getArea());
 	}
 
@@ -56,32 +57,47 @@ public class Server extends UnicastRemoteObject implements ServerInterface{
 			mapVagas.put(vaga.getArea(), new HashMap<String, Vaga>());
 		}
 		mapVagas.get(vaga.getArea()).put(vaga.getNomeEmpresa(), vaga);
+		System.out.println("Vaga Cadastrada");
 		notificarClientesPessoa(vaga, vaga.getArea());
 	}
 
-	public void cadastrarInteresseCurriculo(String area, ClientePessoa cli) {
+	public void cadastrarInteresseVaga(String area, ClientePessoaInterface cli) {
 		if(!registrosVagas.containsKey(area)) {
-			registrosVagas.put(area, new ArrayList<ClientePessoa>());
+			registrosVagas.put(area, new ArrayList<ClientePessoaInterface>());
 		}
 		registrosVagas.get(area).add(cli);
+		System.out.println("Interesse em vagas cadastrado");
 	}
 
-	public void cadastrarInteresseVaga(String area, ClienteEmpresa cli) {
+	public void cadastrarInteresseCurriculo(String area, ClienteEmpresaInterface cli) {
 		if(!registrosCurriculo.containsKey(area)) {
-			registrosCurriculo.put(area, new ArrayList<ClienteEmpresa>());
+			registrosCurriculo.put(area, new ArrayList<ClienteEmpresaInterface>());
 		}
 		registrosCurriculo.get(area).add(cli);
+		System.out.println("Interesse em curriculos cadastrado");
 	}
 	
 	public void notificarClientesPessoa(Vaga vaga, String area) {
-		for (ClientePessoa referecia : registrosVagas.get(area)) {
-			referecia.notificarVaga(vaga);
+		if(registrosVagas.get(area) != null) {
+			for (ClientePessoaInterface referecia : registrosVagas.get(area)) {
+				try {
+					referecia.notificarVaga(vaga);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	
 	public void notificarClientesEmpresa(Curriculo curriculo, String area) {
-		for (ClienteEmpresa referecia : registrosCurriculo.get(area)) {
-			referecia.notificarCurriculo(curriculo);
+		if(registrosCurriculo.get(area) != null) {
+			for (ClienteEmpresaInterface referecia : registrosCurriculo.get(area)) {
+				try {
+					referecia.notificarCurriculo(curriculo);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 }

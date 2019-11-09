@@ -1,6 +1,9 @@
 package mainPackage;
 
-public interface ClientePessoaInterface {
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
-	public void notificarVaga(Vaga vaga);
+public interface ClientePessoaInterface extends Remote{
+
+	public void notificarVaga(Vaga vaga) throws RemoteException;
 }

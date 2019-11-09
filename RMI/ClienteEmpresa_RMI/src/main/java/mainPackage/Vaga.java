@@ -1,6 +1,8 @@
 package mainPackage;
 
-public class Vaga {
+import java.io.Serializable;
+
+public class Vaga implements Serializable{
 
 	private String nomeEmpresa;
 	private String area;
@@ -13,6 +15,10 @@ public class Vaga {
 		this.area = area;
 		this.tempo = tempo;
 		this.salario = salario;
+	}
+
+	public Vaga() {
+		// TODO Auto-generated constructor stub
 	}
 
 	public String getNomeEmpresa() {

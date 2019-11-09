@@ -1,6 +1,8 @@
 package mainPackage;
 
-public class Curriculo {
+import java.io.Serializable;
+
+public class Curriculo implements Serializable{
 
 	private String nome;
 	private String contato;
@@ -15,6 +17,10 @@ public class Curriculo {
 		this.area = area;
 		this.tempo = tempo;
 		this.salario = salario;
+	}
+
+	public Curriculo() {
+		// TODO Auto-generated constructor stub
 	}
 
 	public String getNome() {

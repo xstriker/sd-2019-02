@@ -3,6 +3,7 @@ import requests
 
 
 def curriculum():
+    # Make a curriculum object
     name  = input('Digite seu nome: ')
     contact = input('Digite seu contato: ')
     area = input('Digite sua area de interesse: ')
@@ -16,30 +17,44 @@ def curriculum():
         'carga_horaria': workload,
         'salario': salary 
     }
-
     return curriculum
 
 
-base_url = 'https://api.github.com/some/endpoint'
+base_url = 'http://localhost'
 headers = {'content-type': 'application/json'}
 
 option = input(
     """\nO que voce deseja fazer?
     1 - Cadastrar Curriculo
-    2 - Atualizar Curriculo"""
+    2 - Atualizar Curriculo
+    3 - Consultar Vagas\n"""
 )
 
 if option == '1':
     data = curriculum()
-    url = '{}/{}'.format(base_url, 'create_curriculum')
+    url = '{}/curriculum/insert'.format(base_url)
+    # Make a post request in the server
+    response = requests.post(
+        url,
+        data=json.dumps(data),
+        headers=headers
+    )
+
 elif option == '2':
     data = curriculum()
-    url = '{}/{}'.format(base_url, 'update_curriculum')
+    url = '{}/curriculum/update'.format(base_url)
+    # Make a put request in the server
+    response = requests.put(
+        url,
+        data=json.dumps(data),
+        headers=headers
+    )
 
-response = requests.post(
-    url,
-    data=json.dumps(data),
-    headers=headers
-)
+elif option == '3':
+    area = input("Digite a area desejada: ")
+    salary = input("Digite o salario desejado: ")
+    url = "{}/job_opportunity/area={}&salary={}".format(base_url, area, salary)
+    # Make a get request in the server
+    response = requests.get(url)
 
 print(response)

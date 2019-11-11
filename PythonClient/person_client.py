@@ -1,5 +1,6 @@
 import json
 import requests
+from urllib.parse import quote_plus as urlencode
 
 
 def curriculum():
@@ -53,7 +54,11 @@ elif option == '2':
 elif option == '3':
     area = input("Digite a area desejada: ")
     salary = input("Digite o salario desejado: ")
-    url = "{}/job_opportunity/area={}&salary={}".format(base_url, area, salary)
+    url = "{}/job_opportunity/area={}&salary={}".format(
+        base_url,
+        urlencode(area),
+        salary
+    )
     # Make a get request in the server
     response = requests.get(url)
 

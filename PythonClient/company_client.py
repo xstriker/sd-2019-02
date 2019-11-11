@@ -1,5 +1,6 @@
 import json
 import requests
+from urllib.parse import quote_plus as urlencode
 
 
 def job_opportunity():
@@ -52,7 +53,7 @@ elif option == '2':
 
 elif option == '3':
     area = input('Digite a area desejada: ')
-    url = '{}/curriculum/area={}'.format(base_url, area)
+    url = '{}/curriculum/area={}'.format(base_url, urlencode(area))
     # Make a get request in the server
     response = requests.get(url)
 

@@ -53,7 +53,7 @@ elif option == '2':
 
 elif option == '3':
     area = input('Digite a area desejada: ')
-    url = '{}/curriculum/area={}'.format(base_url, urlencode(area))
+    url = '{}/rest/curriculum/area={}'.format(base_url, urlencode(area))
     # Make a get request in the server
     response = requests.get(url)
 

@@ -1,15 +1,15 @@
-package mainPackage;
+package com.sd2019.jobserver;
 
 import java.io.Serializable;
 
-public class Vaga implements Serializable{
+public class Vaga implements Serializable {
 
 	private String nomeEmpresa;
 	private String contato;
 	private String area;
 	private Double tempo;
 	private Double salario;
-	
+
 	public Vaga(String nomeEmpresa, String area, Double tempo, Double salario) {
 		super();
 		this.nomeEmpresa = nomeEmpresa;
@@ -26,26 +26,41 @@ public class Vaga implements Serializable{
 	public String getNomeEmpresa() {
 		return nomeEmpresa;
 	}
+
 	public void setNomeEmpresa(String nomeEmpresa) {
 		this.nomeEmpresa = nomeEmpresa;
 	}
+
 	public String getArea() {
 		return area;
 	}
+
 	public void setArea(String area) {
 		this.area = area;
 	}
+
 	public Double getTempo() {
 		return tempo;
 	}
+
 	public void setTempo(Double tempo) {
 		this.tempo = tempo;
 	}
+
 	public Double getSalario() {
 		return salario;
 	}
+
 	public void setSalario(Double salario) {
 		this.salario = salario;
 	}
-	
+
+	public String getContato() {
+		return contato;
+	}
+
+	public void setContato(String contato) {
+		this.contato = contato;
+	}
+
 }

@@ -21,7 +21,7 @@ def job_opportunity():
     return job_opportunity
 
 
-base_url = 'https://api.github.com/some/endpoint'
+base_url = 'http://localhost'
 headers = {'content-type': 'application/json'}
 
 option = input(
@@ -33,7 +33,7 @@ option = input(
 
 if option == '1':
     data = job_opportunity()
-    url = '{}/job_opportunity/insert'.format(base_url)
+    url = '{}/job_opportunity'.format(base_url)
     # Make a post request in the server
     response = requests.post(
         url,
@@ -43,7 +43,7 @@ if option == '1':
 
 elif option == '2':
     data = job_opportunity()
-    url = '{}/job_opportunity/update'.format(base_url)
+    url = '{}/job_opportunity'.format(base_url)
     # Make a put request in the server
     response = requests.put(
         url,

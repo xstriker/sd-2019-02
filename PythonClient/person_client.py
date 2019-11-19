@@ -33,7 +33,7 @@ option = input(
 
 if option == '1':
     data = curriculum()
-    url = '{}/curriculum/insert'.format(base_url)
+    url = '{}/curriculum'.format(base_url)
     # Make a post request in the server
     response = requests.post(
         url,
@@ -43,7 +43,7 @@ if option == '1':
 
 elif option == '2':
     data = curriculum()
-    url = '{}/curriculum/update'.format(base_url)
+    url = '{}/curriculum'.format(base_url)
     # Make a put request in the server
     response = requests.put(
         url,

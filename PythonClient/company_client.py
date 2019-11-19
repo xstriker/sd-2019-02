@@ -33,7 +33,7 @@ option = input(
 
 if option == '1':
     data = job_opportunity()
-    url = '{}/job_opportunity/insert'.format(base_url)
+    url = '{}/rest/job_opportunity/insert'.format(base_url)
     # Make a post request in the server
     response = requests.post(
         url,
@@ -43,7 +43,7 @@ if option == '1':
 
 elif option == '2':
     data = job_opportunity()
-    url = '{}/job_opportunity/update'.format(base_url)
+    url = '{}/rest/job_opportunity/update'.format(base_url)
     # Make a put request in the server
     response = requests.put(
         url,
@@ -53,7 +53,7 @@ elif option == '2':
 
 elif option == '3':
     area = input('Digite a area desejada: ')
-    url = '{}/curriculum/area={}'.format(base_url, urlencode(area))
+    url = '{}/rest/curriculum/area={}'.format(base_url, urlencode(area))
     # Make a get request in the server
     response = requests.get(url)
 

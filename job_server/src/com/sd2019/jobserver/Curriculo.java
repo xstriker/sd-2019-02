@@ -2,6 +2,8 @@ package com.sd2019.jobserver;
 
 import java.io.Serializable;
 
+import org.json.simple.JSONObject;
+
 public class Curriculo implements Serializable {
 
 	private String nome;
@@ -17,6 +19,25 @@ public class Curriculo implements Serializable {
 		this.area = area;
 		this.tempo = tempo;
 		this.salario = salario;
+	}
+	
+	public Curriculo(JSONObject json) {
+		this.nome = (String) json.get("nome");
+		this.contato = (String) json.get("contato");
+		this.area = (String) json.get("area");
+		this.tempo = (Double) json.get("tempo");
+		this.salario = (Double) json.get("salario");
+	}
+	
+	@SuppressWarnings("unchecked")
+	public JSONObject toJSON() {
+		JSONObject json = new JSONObject();
+		json.put("nomeEmpresa", this.nome);
+		json.put("contato", this.contato);
+		json.put("area", this.area);
+		json.put("tempo", this.tempo);
+		json.put("salario", this.salario);
+		return json;
 	}
 
 	public Curriculo() {

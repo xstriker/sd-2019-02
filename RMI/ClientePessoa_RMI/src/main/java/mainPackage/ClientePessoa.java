@@ -13,6 +13,7 @@ public class ClientePessoa extends UnicastRemoteObject implements ClientePessoaI
 
 	protected ClientePessoa(Registry referenciaServicoNomes) throws RemoteException {
 		try {
+			// Pegue a referencia do "ServerInterface"
 			server = (ServerInterface)referenciaServicoNomes.lookup("ServerInterface");
 		} catch (NotBoundException e) {
 			e.printStackTrace();

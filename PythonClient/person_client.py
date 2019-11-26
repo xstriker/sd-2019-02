@@ -11,17 +11,20 @@ def curriculum():
     workload = input('Digite sua carga horaria pretendida: ')
     salary = input('Digite seu salario pretendido: ')
 
-    curriculum = { 
-        'nome': name,
-        'contato': contact,
-        'area': area,
-        'carga_horaria': workload,
-        'salario': salary 
+    curriculum = {
+	"curriculum": {
+		"nome": name,
+		"contato": contact,
+		"area": area,
+		"tempo": workload,
+		"salario": salary
+	}
     }
+    
     return curriculum
 
 
-base_url = 'http://localhost'
+base_url = 'http://localhost:4000'
 headers = {'content-type': 'application/json'}
 
 option = input(
@@ -59,6 +62,7 @@ elif option == '3':
         urlencode(area),
         salary
     )
+    print(url)
     # Make a get request in the server
     response = requests.get(url)
 

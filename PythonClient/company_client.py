@@ -11,17 +11,20 @@ def job_opportunity():
     workload = input('Digite a carga horaria pretendida: ')
     salary = input('Digite o salario pretendido: ')
 
-    job_opportunity = { 
-        'nome': name,
-        'contato': contact,
-        'area': area,
-        'carga_horaria': workload,
-        'salario': salary 
+    job_opportunity = {
+	"job_opportunity": {
+		"nomeEmpresa": name,
+		"contato": contact,
+		"area": area,
+		"tempo": workload,
+		"salario": salary
+	}
     }
+    
     return job_opportunity
 
 
-base_url = 'http://localhost'
+base_url = 'http://localhost:4000'
 headers = {'content-type': 'application/json'}
 
 option = input(
@@ -53,8 +56,9 @@ elif option == '2':
 
 elif option == '3':
     area = input('Digite a area desejada: ')
-    url = '{}/rest/curriculum/area={}'.format(base_url, urlencode(area))
+    url = '{}/curriculum?area={}'.format(base_url, urlencode(area))
     # Make a get request in the server
+    print(url)
     response = requests.get(url)
 
 print(response)

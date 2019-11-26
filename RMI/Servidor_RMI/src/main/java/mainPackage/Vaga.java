@@ -19,10 +19,6 @@ public class Vaga implements Serializable{
 		this.salario = salario;
 	}
 
-	public Vaga() {
-		// TODO Auto-generated constructor stub
-	}
-
 	public String getNomeEmpresa() {
 		return nomeEmpresa;
 	}

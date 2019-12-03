@@ -4,6 +4,9 @@ defmodule Server.JobServer.JobOpportunity do
 
   @derive {Jason.Encoder, only: [:area, :contato, :nomeEmpresa, :salario, :tempo]}
 
+  @doc """
+  Descrição de um objeto do tipo vaga
+  """
   schema "opportunities" do
     field :area, :string
     field :contato, :string

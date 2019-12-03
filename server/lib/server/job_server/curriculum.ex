@@ -4,6 +4,9 @@ defmodule Server.JobServer.Curriculum do
 
   @derive {Jason.Encoder, only: [:area, :contato, :nome, :salario, :tempo]}
 
+  @doc """
+  Descrição de um objeto do tipo currículo
+  """
   schema "curriculuns" do
     field :area, :string
     field :contato, :string

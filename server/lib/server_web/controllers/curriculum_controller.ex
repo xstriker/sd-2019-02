@@ -9,11 +9,9 @@ defmodule ServerWeb.CurriculumController do
 
   action_fallback ServerWeb.FallbackController
 
-  def index(conn, _params) do
-    curriculuns = JobServer.list_curriculuns()
-    render(conn, "index.json", curriculuns: curriculuns)
-  end
-
+  @doc """
+  Método para criação de um novo currículo - recebe um json com o objeto currículo e retorna uma mensagem de sucesso
+  """
   def create(conn, %{"curriculum" => curriculum_params}) do
     with {:ok, %Curriculum{} = curriculum} <- JobServer.create_curriculum(curriculum_params) do
       conn
@@ -23,27 +21,20 @@ defmodule ServerWeb.CurriculumController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    curriculum = JobServer.get_curriculum!(id)
-    render(conn, "show.json", curriculum: curriculum)
-  end
-
+  @doc """
+  Método para a atualizacao de um currículo - recebe o ID e o currículo atualizado e retorna uma mensagem de sucesso
+  """
   def update(conn, %{"id" => id, "curriculum" => curriculum_params}) do
     curriculum = JobServer.get_curriculum!(id)
 
-    with {:ok, %Curriculum{} = curriculum} <- JobServer.update_curriculum(curriculum, curriculum_params) do
+    with {:ok, %Curriculum{} = _curriculum} <- JobServer.update_curriculum(curriculum, curriculum_params) do
       text(conn, "Atualizado com sucesso")
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    curriculum = JobServer.get_curriculum!(id)
-
-    with {:ok, %Curriculum{}} <- JobServer.delete_curriculum(curriculum) do
-      send_resp(conn, :no_content, "")
-    end
-  end
-
+  @doc """
+  Método para listagem de currcículos - recebe a área e retorna uma lista de currículos
+  """
   def getFilter(conn, %{"area" => area}) do
     list = Repo.all(from u in Curriculum, where: u.area == ^area)
     json(conn, %{"curriculuns" => list})

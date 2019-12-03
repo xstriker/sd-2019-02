@@ -9,11 +9,9 @@ defmodule ServerWeb.JobOpportunityController do
 
   action_fallback ServerWeb.FallbackController
 
-  def index(conn, _params) do
-    opportunities = JobServer.list_opportunities()
-    render(conn, "index.json", opportunities: opportunities)
-  end
-
+  @doc """
+  Método para criação de uma nova vaga - recebe um json com o objeto vaga e retorna uma mensagem de sucesso
+  """
   def create(conn, %{"job_opportunity" => job_opportunity_params}) do
     with {:ok, %JobOpportunity{} = job_opportunity} <- JobServer.create_job_opportunity(job_opportunity_params) do
       conn
@@ -23,29 +21,22 @@ defmodule ServerWeb.JobOpportunityController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    job_opportunity = JobServer.get_job_opportunity!(id)
-    render(conn, "show.json", job_opportunity: job_opportunity)
-  end
-
+  @doc """
+  Método para a atualizacao de uma vaga - recebe o ID e a vaga atualizada e retorna uma mensagem de sucesso
+  """
   def update(conn, %{"id" => id, "job_opportunity" => job_opportunity_params}) do
     job_opportunity = JobServer.get_job_opportunity!(id)
 
-    with {:ok, %JobOpportunity{} = job_opportunity} <- JobServer.update_job_opportunity(job_opportunity, job_opportunity_params) do
+    with {:ok, %JobOpportunity{} = _job_opportunity} <- JobServer.update_job_opportunity(job_opportunity, job_opportunity_params) do
       text(conn, "Atualizado com sucesso")
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    job_opportunity = JobServer.get_job_opportunity!(id)
-
-    with {:ok, %JobOpportunity{}} <- JobServer.delete_job_opportunity(job_opportunity) do
-      send_resp(conn, :no_content, "")
-    end
-  end
-
+  @doc """
+  Método para listagem de vagas - recebe a área e o salário como filtros e retorna uma lista de vagas
+  """
   def getFilter(conn, %{"area" => area, "salario" => salario}) do
-    list = Repo.all(from u in JobOpportunity, where: u.area == ^area and u.salario == ^salario)
-    json(conn, %{"vagas" => list.rows})
+    list = Repo.all(from u in JobOpportunity, where: u.area == ^area and u.salario >= ^salario)
+    json(conn, %{"vagas" => list})
   end
 end

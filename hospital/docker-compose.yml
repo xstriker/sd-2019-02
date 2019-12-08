@@ -1,0 +1,54 @@
+version: '3'
+services:   
+  hospital:
+    container_name: hospital
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["gunicorn", "-c", "config/wsgi.py", "hospital"]
+    ports: 
+      - "5000:5000"
+    volumes:
+      - ./:/usr/local/src/
+    tty: true
+    links:
+      - postgres
+      
+  surgeon:
+    container_name: surgeon
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["gunicorn", "-c", "config/wsgi.py", "surgeon"]
+    ports: 
+      - "5001:5000"
+    volumes:
+      - ./:/usr/local/src/
+    tty: true
+    links:
+      - postgres
+
+  anesthetist:
+    container_name: anesthetist
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["gunicorn", "-c", "config/wsgi.py", "anesthetist"]
+    ports: 
+      - "5002:5000"
+    volumes:
+      - ./:/usr/local/src/
+    tty: true
+    links:
+      - postgres
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=dis_rest
+      - POSTGRES_PASSWORD=E!bS{c5CS4Zsm#
+    ports:
+      - "5432:5432"
+    volumes:
+    - ./config/database_creation.sql:/docker-entrypoint-initdb.d/init.sql

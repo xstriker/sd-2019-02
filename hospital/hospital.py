@@ -31,5 +31,3 @@ def check_appointment():
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', threaded=True)
-    print("teste")
-    ok = input("ok: ")

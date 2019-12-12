@@ -4,29 +4,25 @@ from flask import abort
 from flask import Flask, request, jsonify
 
 from config.flask_vars import Config
-from config.init_flask import make_db_connection
+from model.appointments import check_appointment, save_to_temp_agenda
 
 # Declare Flask app
 application = Flask(__name__)
 application.config.from_object(Config)
 
 
-@application.route('/query_appointments', methods=['POST'])
-def check_appointment():
-    connection = make_db_connection()
-    cursor = connection.cursor()
-
+@application.route('/query_appointment', methods=['POST'])
+def query_appointments():
     if not request.json:
         abort(400)
-    appointment = request.json['appointment']
+    appointment_date = request.json['appointment_date']
 
-    check_if_appointment_exist_query = """ SELECT * FROM surgeon.appointments 
-                                where id = {}""".format(appointment)
-    cursor.execute(check_if_appointment_exist_query)
-    connection.commit()
-    connection.close()
+    has_free_date = check_appointment(appointment_date, 'anesthetist')
 
-    return jsonify({'sucess': 'appointment queried'}), 201
+    if has_free_date:
+        return jsonify({'appointment': 'date avaible'}), 201
+    
+    return jsonify({'appointment': 'date not avaible'}), 201
 
 
 if __name__ == '__main__':

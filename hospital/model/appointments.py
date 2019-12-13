@@ -41,7 +41,9 @@ def _check_appointment(id, date, schema):
     cur.execute(check_if_appointment_exist)
     response = cur.fetchone()
     
-    if response:
+    if response and schema == 'hospital':
+        return abort(id, schema, date, False)
+    elif response:
         return abort(id, schema, date)
 
     # Check temporary agenda
@@ -103,7 +105,7 @@ def receive_update_appointment(id, schema, persona, response):
 
     insert_appointment = """
         UPDATE {}.appointments_temp 
-        SET {}_appointment_response = {}
+        SET {}_appointment_response = '{}'
         WHERE id = {}
     """.format(schema, persona, response, id)
 
@@ -115,12 +117,12 @@ def check_appointment_reponse(schema, id, date):
     connection = make_db_connection()
     cur = connection.cursor()
 
-    # Check temporary agenda
+    # If both responses were success
     query = """
         SELECT * FROM {}.appointments_temp WHERE id = {} AND 
         anesthetist_appointment_response is true AND
-        surgeon_appointment_response is AND
-        and appointment_success is null
+        surgeon_appointment_response is true AND
+        appointment_success is null
     """.format(schema, id)
     cur.execute(query)
     response = cur.fetchone()
@@ -128,7 +130,22 @@ def check_appointment_reponse(schema, id, date):
     connection.close()
     if response:
         return commit_appointment(id, schema, date)
-    return abort(id, schema, date)
+    
+    # If at least one of them failed
+    connection = make_db_connection()
+    cur = connection.cursor()
+    query = """
+        SELECT * FROM {}.appointments_temp WHERE id = {} AND 
+        (anesthetist_appointment_response is false OR
+        surgeon_appointment_response is false)
+    """.format(schema, id)
+    cur.execute(query)
+    response = cur.fetchone()
+
+    connection.close()
+    if response:
+        return abort(id, schema, date)
+    
 
 def commit_appointment(id, schema, date):
     connection = make_db_connection()
@@ -150,7 +167,7 @@ def commit_appointment(id, schema, date):
     # Query all other appointments on queue
     query = """
         UPDATE {}.appointments_temp SET appointment_success = '0'
-        WHERE date = '{}' AND id != {} 
+        WHERE appointment_date = '{}' AND id != {} 
     """.format(schema, date, id)
     cur.execute(query)
     connection.commit()
@@ -163,42 +180,71 @@ def commit_appointment(id, schema, date):
     return 'appointment successs'
 
 
-def abort(id, schema, date):
-    connection = make_db_connection()
-    cur = connection.cursor()
+def abort(id, schema, date, send_response=True):
+    if send_response == True:
+        connection = make_db_connection()
+        cur = connection.cursor()
 
-    insert_appointment = """
-        UPDATE {}.appointments_temp SET appointment_success = '0'
-        WHERE id = {}
-    """.format(schema, id)
+        insert_appointment = """
+            UPDATE {}.appointments_temp SET appointment_success = '0',
+            myself_success = '0'
+            WHERE id = {}
+        """.format(schema, id)
 
-    cur.execute(insert_appointment)
-    connection.commit()
-    connection.close()
+        cur.execute(insert_appointment)
+        connection.commit()
+        connection.close()
 
-    if schema == 'hospital':
-        continue_queue(date, schema)
-
-        _call_your_friend(id, schema, 'SURGEON', date, 0)
-        _call_your_friend(id, schema, 'ANESTHETIST', date, 0)
+        if schema == 'hospital':
+            _call_your_friend(id, schema, 'SURGEON', date, 0)
+            _call_your_friend(id, schema, 'ANESTHETIST', date, 0)
+            continue_queue(date, schema)
+        else:
+            _call_your_friend(id, schema, 'HOSPITAL', date, 0)
     else:
-        _call_your_friend(id, schema, 'HOSPITAL', date, 0)
+        connection = make_db_connection()
+        cur = connection.cursor()
+
+        insert_appointment = """
+            UPDATE {}.appointments_temp SET appointment_success = '0',
+            myself_success = '0'
+            WHERE id = {}
+        """.format(schema, id)
+
+        cur.execute(insert_appointment)
+        connection.commit()
+        connection.close()
 
     return 'appointment denied'
-
 
 def continue_queue(date, schema):
     connection = make_db_connection()
     cur = connection.cursor()
 
     # Check temporary agenda
-    check_if_appointment_temp_exist = """
+    query = """
         SELECT min(id) FROM {}.appointments_temp WHERE appointment_date = '{}' 
         AND appointment_success is null 
     """.format(schema, date)
 
-    cur.execute(check_if_appointment_temp_exist)
+    cur.execute(query)
     id = cur.fetchone()[0]
     connection.close()
 
     _check_appointment(id, date, schema)
+
+def check_appointment_status(schema, id):
+    connection = make_db_connection()
+    cur = connection.cursor()
+
+    # Check temporary agenda
+    query = """
+        SELECT myself_success FROM {}.appointments_temp WHERE id = {} 
+        AND myself_success is null 
+    """.format(schema, id)
+
+    cur.execute(query)
+    response = cur.fetchone()
+    connection.close()
+    if response:
+        return 1

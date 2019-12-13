@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 
 from config.flask_vars import Config
 from model.appointments import (
-    insert_request, commit_appointment
+    insert_request, commit_appointment, check_appointment_status
 )
 
 # Declare Flask app
@@ -25,7 +25,9 @@ def query_appointments():
         commit_appointment(id, 'anesthetist', date)
         return jsonify({'appointment': 'commited'}), 201
     elif success == 0:
-        abort(id, 'anesthetist', date)
+        is_open = check_appointment_status('anesthetist', id)
+        if is_open:
+            abort(id, 'anesthetist', date)
         return jsonify({'appointment': 'denied'}), 201
     else:
         insert_request(date, 'anesthetist', id)

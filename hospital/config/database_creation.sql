@@ -7,7 +7,6 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA surgeon to dis_rest;
 create table surgeon.appointments_temp (
 	id integer not null,
 	appointment_date date,
-	appointment_response boolean null,
 	appointment_success boolean null,
 	myself_success boolean null
 );
@@ -28,7 +27,6 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA anesthetist to dis_rest;
 create table anesthetist.appointments_temp (
 	id integer not null,
 	appointment_date date,
-	appointment_response boolean null,
 	appointment_success boolean null,
 	myself_success boolean null
 );

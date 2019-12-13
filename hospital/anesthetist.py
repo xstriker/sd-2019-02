@@ -6,12 +6,14 @@ from model.appointments import (
     insert_request, commit_appointment, check_appointment_status
 )
 
+# anesthetist main with endpoints
+
 # Declare Flask app
 application = Flask(__name__)
 application.config['DEBUG'] = True
 application.config.from_object(Config)
 
-
+# response of status to a request
 @application.route('/schedule_appointment', methods=['POST'])
 def query_appointments():
     if not request.json:

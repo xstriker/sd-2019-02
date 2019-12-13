@@ -6,7 +6,10 @@ from datetime import date
 
 from config.init_flask import make_db_connection
 
+# lib with reusable methods called by all members 
 
+# Create first row in db schema with serial ID and DATE in params
+# called by all members to create the register
 def insert_request(date, schema, id=None):
     connection = make_db_connection()
     cur = connection.cursor()
@@ -27,9 +30,10 @@ def insert_request(date, schema, id=None):
     id = cur.fetchone()[0]
     connection.close()
 
-    return _check_appointment(id, date, schema) 
+    return _check_appointment(id, date, schema)
 
-
+# Check itself if DATE is free
+# called by all members check a date
 def _check_appointment(id, date, schema):
     connection = make_db_connection()
     cur = connection.cursor()
@@ -61,6 +65,7 @@ def _check_appointment(id, date, schema):
     # Else check the valid agenda
     return _myself_success(id, schema, date)
 
+# if DATE is free set myself as true
 def _myself_success(id, schema, date):
     # UPDATE MYSELF SUCCESS 
     connection = make_db_connection()
@@ -81,6 +86,7 @@ def _myself_success(id, schema, date):
     
     return True
 
+# create request to ask another members a DATE
 def _call_your_friend(id, persona, target, appointment_date, success):
     request_body = {
         'id': id,
@@ -99,6 +105,7 @@ def _call_your_friend(id, persona, target, appointment_date, success):
     print(r.content)
     return r.content
 
+# set another members response after answer
 def receive_update_appointment(id, schema, persona, response):
     connection = make_db_connection()
     cur = connection.cursor()
@@ -113,6 +120,7 @@ def receive_update_appointment(id, schema, persona, response):
     connection.commit()
     connection.close()
 
+# check if all members already answer the request 
 def check_appointment_reponse(schema, id, date):
     connection = make_db_connection()
     cur = connection.cursor()
@@ -146,7 +154,8 @@ def check_appointment_reponse(schema, id, date):
     if response:
         return abort(id, schema, date)
     
-
+# if all members response  are OK - commit the DATE
+# update to succsses / insert on the final db / kill the queue / call other members
 def commit_appointment(id, schema, date):
     connection = make_db_connection()
     cur = connection.cursor()
@@ -179,7 +188,8 @@ def commit_appointment(id, schema, date):
 
     return 'appointment successs'
 
-
+# if someone response is NOK - abort transaction
+# update to fail / continue queue / call other members
 def abort(id, schema, date, send_response=True):
     if send_response == True:
         connection = make_db_connection()
@@ -217,6 +227,7 @@ def abort(id, schema, date, send_response=True):
 
     return 'appointment denied'
 
+# restart the next member from the queue
 def continue_queue(date, schema):
     connection = make_db_connection()
     cur = connection.cursor()
@@ -231,8 +242,9 @@ def continue_queue(date, schema):
     id = cur.fetchone()[0]
     connection.close()
 
-    _check_appointment(id, date, schema)
+    return _check_appointment(id, date, schema)
 
+# check myself status
 def check_appointment_status(schema, id):
     connection = make_db_connection()
     cur = connection.cursor()
@@ -248,3 +260,90 @@ def check_appointment_status(schema, id):
     connection.close()
     if response:
         return 1
+
+# restore the system using logs - called on startup
+def restore(schema):
+    appointment = find_next_incomplete_appointments(schema)
+    while(appointment):
+        if schema == 'hospital':
+            hospital_restore_conditions(appointment)
+        else:
+            friends_restore_conditions(appointment, schema)
+        appointment = find_next_incomplete_appointments(schema)
+    
+    return "System restored"
+        
+# conditions to restore the hospital based on state
+def hospital_restore_conditions(appointment):
+    if appointment[5] is None:
+        return _check_appointment(appointment[0], appointment[1], 'hospital')
+    elif appointment[2] is None or appointment[3] is None:
+        if appointment[2] is None:
+            _call_your_friend(appointment[0], 'hospital', '', appointment[1], 2)
+        if appointment[3] is None:ANESTHETIST
+            _call_your_friend(appointment[0], 'hospital', 'SURGEON', appointment[1], 2)
+    else:
+        return check_appointment_reponse('hospital', appointment[0], appointment[1])
+
+# conditions to restore the ANESTHETIST and the surgeon based on state
+def friends_restore_conditions(appointment, schema):
+    if appointment[3] is None:
+        return _check_appointment(appointment[0], appointment[1], schema)
+    elif appointment[2]:
+        return call_check_appointment_state(appointment[0], appointment[1], schema)
+    else:
+        return check_appointment_reponse(schema, appointment[0], appointment[1])
+
+# find next appointment to be restored
+def find_next_incomplete_appointments(schema):
+    connection = make_db_connection()
+    cur = connection.cursor()
+
+    # Check temporary agenda
+    query = """
+        SELECT * FROM {}.appointments_temp 
+            WHERE myself_success is null 
+            AND id = (SELECT MIN(id) FROM {}.appointments_temp 
+                        WHERE myself_success is null )
+    
+    """.format(schema, schema)
+
+    cur.execute(query)
+    response = cur.fetchall()
+    connection.close()
+    return response
+
+# check the state of a appointment
+def check_appointment_state(id):
+    connection = make_db_connection()
+    cur = connection.cursor()
+
+    # Check temporary agenda
+    query = """
+        SELECT appointment_success FROM hospital.appointments_temp 
+        WHERE id = {}
+    """.format(id)
+
+    cur.execute(query)
+    response = cur.fetchall()
+    connection.close()
+    return response
+
+# make the request to ask hospital the status of a transaction
+def call_check_appointment_state(id, date, schema):
+    request_body = {'id': id}
+    request_body = json.dumps(request_body)
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    r = requests.post(
+        "http://{}:5000/check_appointment"
+            .format('HOSPITAL'),
+        headers = headers,
+        data=request_body
+    )
+    # find out how content arrives
+    if r.content is True:
+        return commit_appointment(id, schema, date)
+    elif r.content is False:
+        return abort(id, schema, date, False)
+    else:
+        return "Waiting for response"

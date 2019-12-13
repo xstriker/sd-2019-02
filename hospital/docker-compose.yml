@@ -13,9 +13,8 @@ services:
     tty: true
     links:
       - postgres
-    environment:
-      - SURGEON_PORT=5001
-      - ANESTHETIST_PORT=5002
+      - surgeon
+      - anesthetist
       
   surgeon:
     container_name: surgeon
@@ -30,9 +29,6 @@ services:
     tty: true
     links:
       - postgres
-    environment:
-      - HOSPITAL_PORT=5000
-      - ANESTHETIST_PORT=5002
 
   anesthetist:
     container_name: anesthetist
@@ -47,9 +43,6 @@ services:
     tty: true
     links:
       - postgres
-    environment:
-      - HOSPITAL_PORT=5000
-      - SURGEON_PORT=5001
 
   postgres:
     image: postgres

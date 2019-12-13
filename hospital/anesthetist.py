@@ -1,29 +1,36 @@
-import os
-
 from flask import abort
 from flask import Flask, request, jsonify
 
 from config.flask_vars import Config
-from model.appointments import check_appointment, save_to_temp_agenda
+from model.appointments import (
+    insert_request, commit_appointment
+)
 
 # Declare Flask app
 application = Flask(__name__)
+application.config['DEBUG'] = True
 application.config.from_object(Config)
 
 
-@application.route('/query_appointment', methods=['POST'])
+@application.route('/schedule_appointment', methods=['POST'])
 def query_appointments():
     if not request.json:
         abort(400)
-    appointment_date = request.json['appointment_date']
 
-    has_free_date = check_appointment(appointment_date, 'anesthetist')
+    id = request.json['id']
+    success = request.json['success']
+    date = request.json['appointment_date']
 
-    if has_free_date:
-        return jsonify({'appointment': 'date avaible'}), 201
-    
-    return jsonify({'appointment': 'date not avaible'}), 201
+    if success == 1:
+        commit_appointment(id, 'anesthetist', date)
+        return jsonify({'appointment': 'commited'}), 201
+    elif success == 0:
+        abort(id, 'anesthetist', date)
+        return jsonify({'appointment': 'denied'}), 201
+    else:
+        insert_request(date, 'anesthetist', id)
+        return jsonify({'appointment': 'avaible'}), 201
 
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', threaded=True)
+    application.run(host='0.0.0.0', threaded=True, debug=True)

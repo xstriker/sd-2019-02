@@ -1,9 +1,9 @@
-from flask import abort
+from flask import abort as abort_flask
 from flask import Flask, request, jsonify
 
 from config.flask_vars import Config
 from model.appointments import (
-    insert_request, commit_appointment, check_appointment_status
+    insert_request, commit_appointment, check_appointment_status, abort
 )
 
 # Declare Flask app
@@ -15,7 +15,7 @@ application.config.from_object(Config)
 @application.route('/schedule_appointment', methods=['POST'])
 def query_appointments():
     if not request.json:
-        abort(400)
+        abort_flask(400)
 
     id = request.json['id']
     success = request.json['success']
@@ -27,7 +27,7 @@ def query_appointments():
     elif success == 0:
         is_open = check_appointment_status('anesthetist', id)
         if is_open:
-            abort(id, 'anesthetist', date)
+            abort(id, 'anesthetist', date, False)
         return jsonify({'appointment': 'denied'}), 201
     else:
         insert_request(date, 'anesthetist', id)

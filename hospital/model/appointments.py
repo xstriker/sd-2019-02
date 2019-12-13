@@ -11,6 +11,7 @@ from config.init_flask import make_db_connection
 # Create first row in db schema with serial ID and DATE in params
 # called by all members to create the register
 def insert_request(date, schema, id=None):
+    time.sleep(10)
     connection = make_db_connection()
     cur = connection.cursor()
 
@@ -241,8 +242,9 @@ def continue_queue(date, schema):
     cur.execute(query)
     id = cur.fetchone()[0]
     connection.close()
+    if id:
+        _check_appointment(id, date, schema)
 
-    return _check_appointment(id, date, schema)
 
 # check myself status
 def check_appointment_status(schema, id):
@@ -252,7 +254,7 @@ def check_appointment_status(schema, id):
     # Check temporary agenda
     query = """
         SELECT myself_success FROM {}.appointments_temp WHERE id = {} 
-        AND myself_success is null 
+        AND appointment_success is null
     """.format(schema, id)
 
     cur.execute(query)

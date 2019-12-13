@@ -15,9 +15,9 @@ application.config.from_object(Config)
 
 # starts a new DATE request to hospital
 @application.route('/query_appointment', methods=['POST'])
-def schedule_appointments(): #(appointment_date):
+def schedule_appointments():
     if not request.json:
-        abort(400)
+       abort(400)
     appointment_date = request.json['appointment_date']
     has_free_date = insert_request(appointment_date, 'hospital')
 
@@ -25,7 +25,7 @@ def schedule_appointments(): #(appointment_date):
 
 # check the status of a appointment
 @application.route('/check_appointment', methods=['POST'])
-def check_appointment(): #(id):
+def check_appointment():
     if not request.json:
         abort(400)
     id = request.json['id']

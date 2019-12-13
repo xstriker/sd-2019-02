@@ -11,7 +11,7 @@ from config.init_flask import make_db_connection
 # Create first row in db schema with serial ID and DATE in params
 # called by all members to create the register
 def insert_request(date, schema, id=None):
-    time.sleep(10)
+    time.sleep(2)
     connection = make_db_connection()
     cur = connection.cursor()
 
@@ -35,7 +35,7 @@ def insert_request(date, schema, id=None):
 
 # Check itself if DATE is free
 # called by all members check a date
-def _check_appointment(id, date, schema):
+def _check_appointment(id, date, schema, restore=False):
     connection = make_db_connection()
     cur = connection.cursor()
 
@@ -67,7 +67,7 @@ def _check_appointment(id, date, schema):
     return _myself_success(id, schema, date)
 
 # if DATE is free set myself as true
-def _myself_success(id, schema, date):
+def _myself_success(id, schema, date, restore=False):
     # UPDATE MYSELF SUCCESS 
     connection = make_db_connection()
     cur = connection.cursor()
@@ -79,6 +79,8 @@ def _myself_success(id, schema, date):
     connection.commit()
     connection.close()
 
+    if restore:
+        return call_check_appointment_state(id, date, schema)
     if schema == 'hospital':
         _call_your_friend(id, schema, 'ANESTHETIST', date, 2)
         _call_your_friend(id, schema, 'SURGEON', date, 2)
@@ -209,7 +211,7 @@ def abort(id, schema, date, send_response=True):
         if schema == 'hospital':
             _call_your_friend(id, schema, 'SURGEON', date, 0)
             _call_your_friend(id, schema, 'ANESTHETIST', date, 0)
-            continue_queue(date, schema)
+            _continue_queue(date, schema)
         else:
             _call_your_friend(id, schema, 'HOSPITAL', date, 0)
     else:
@@ -229,7 +231,7 @@ def abort(id, schema, date, send_response=True):
     return 'appointment denied'
 
 # restart the next member from the queue
-def continue_queue(date, schema):
+def _continue_queue(date, schema):
     connection = make_db_connection()
     cur = connection.cursor()
 
@@ -244,7 +246,6 @@ def continue_queue(date, schema):
     connection.close()
     if id:
         _check_appointment(id, date, schema)
-
 
 # check myself status
 def check_appointment_status(schema, id):
@@ -281,17 +282,23 @@ def hospital_restore_conditions(appointment):
         return _check_appointment(appointment[0], appointment[1], 'hospital')
     elif appointment[2] is None or appointment[3] is None:
         if appointment[2] is None:
-            _call_your_friend(appointment[0], 'hospital', '', appointment[1], 2)
-        if appointment[3] is None:ANESTHETIST
-            _call_your_friend(appointment[0], 'hospital', 'SURGEON', appointment[1], 2)
+            _call_your_friend(
+                appointment[0], 'hospital',
+                'ANESTHETIST', appointment[1], 2
+            )
+        if appointment[3] is None:
+            _call_your_friend(
+                appointment[0], 'hospital',
+                'SURGEON', appointment[1], 2
+            )
     else:
         return check_appointment_reponse('hospital', appointment[0], appointment[1])
 
 # conditions to restore the ANESTHETIST and the surgeon based on state
 def friends_restore_conditions(appointment, schema):
-    if appointment[3] is None:
-        return _check_appointment(appointment[0], appointment[1], schema)
-    elif appointment[2]:
+    if appointment['myself_success'] is None:
+        return _check_appointment(appointment[0], appointment[1], schema, True)
+    elif appointment['appointment_success']:
         return call_check_appointment_state(appointment[0], appointment[1], schema)
     else:
         return check_appointment_reponse(schema, appointment[0], appointment[1])
@@ -306,12 +313,11 @@ def find_next_incomplete_appointments(schema):
         SELECT * FROM {}.appointments_temp 
             WHERE myself_success is null 
             AND id = (SELECT MIN(id) FROM {}.appointments_temp 
-                        WHERE myself_success is null )
-    
+                        WHERE myself_success is null)
     """.format(schema, schema)
 
     cur.execute(query)
-    response = cur.fetchall()
+    response = cur.fetchone()
     connection.close()
     return response
 
@@ -327,7 +333,7 @@ def check_appointment_state(id):
     """.format(id)
 
     cur.execute(query)
-    response = cur.fetchall()
+    response = cur.fetchone()[0]
     connection.close()
     return response
 
@@ -343,9 +349,9 @@ def call_check_appointment_state(id, date, schema):
         data=request_body
     )
     # find out how content arrives
-    if r.content is True:
+    if r.content == 'true':
         return commit_appointment(id, schema, date)
-    elif r.content is False:
+    elif r.content == 'false':
         return abort(id, schema, date, False)
     else:
         return "Waiting for response"
